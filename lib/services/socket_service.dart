@@ -1,88 +1,48 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:get_it/get_it.dart';
 
 class SocketService {
   late IO.Socket socket;
-  final String serverUrl;
-  bool _isConnected = false;
 
-  // Singleton instance
-  static final SocketService _instance = SocketService._internal();
-
-  // Private constructor
-  SocketService._internal()
-      : serverUrl =
-            'https://1fe7-2409-40c1-5025-6d04-1867-c339-b731-605c.ngrok-free.app';
-
-  // Factory constructor
-  factory SocketService() {
-    return _instance;
+  SocketService() {
+    _initSocket();
   }
 
-  bool get isConnected => _isConnected;
+  void _initSocket() {
+    socket = IO.io('https://1fe7-2409-40c1-5025-6d04-1867-c339-b731-605c.ngrok-free.app', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
 
-  void connect() {
-    if (!_isConnected) {
-      socket = IO.io(serverUrl, <String, dynamic>{
-        'transports': ['websocket'],
-        'autoConnect': false,
-      });
+    socket.connect();
 
-      socket.connect();
+    socket.onConnect((_) {
+      print('Socket connection established');
+    });
 
-      socket.onConnect((_) {
-        print('Connected to socket server');
-        _isConnected = true;
-      });
+    socket.onDisconnect((_) {
+      print('Socket disconnected');
+    });
 
-      socket.onDisconnect((_) {
-        print('Disconnected from socket server');
-        _isConnected = false;
-      });
-
-      socket.on('error', (error) {
-        print('Socket error: $error');
-      });
-    }
+    socket.onError((error) {
+      print('Socket error: $error');
+    });
   }
 
-  void registerUser(String userId) {
-    if (_isConnected) {
-      socket.emit('register', userId);
-    } else {
-      print('Not connected to server. Cannot register user.');
-    }
+  void emit(String event, dynamic data) {
+    socket.emit(event, data);
   }
 
-  void initializeChat(String chatId, String userId1, String userId2) {
-    if (_isConnected) {
-      socket.emit('initializeChat', {
-        'chatId': chatId,
-        'userId1': userId1,
-        'userId2': userId2,
-      });
-    } else {
-      print('Not connected to server. Cannot initialize chat.');
-    }
+  void on(String event, Function(dynamic) handler) {
+    socket.on(event, handler);
   }
 
-  void listenForChatInitialized(Function(dynamic) callback) {
-    socket.on('chatInitialized', callback);
+  void off(String event) {
+    socket.off(event);
   }
 
   void disconnect() {
-    if (_isConnected) {
-      socket.disconnect();
-      _isConnected = false;
-    }
+    socket.disconnect();
   }
 
-  // Add more methods as needed for other socket events
-}
-
-// Extension for GetIt registration
-extension SocketServiceDependency on GetIt {
-  void registerSocketService() {
-    registerLazySingleton(() => SocketService());
-  }
+  bool get isConnected => socket.connected;
 }

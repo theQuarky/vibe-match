@@ -53,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
       matchStore.startListeningForMatches(userId, () {
         stopSearch(matchStore);
         Navigator.of(context)
-            .pushNamed('/temp_chat', arguments: matchStore.currentMatch);
+            .pushNamed('/anonymous_chat', arguments: matchStore.currentMatch);
       });
     } catch (e) {
       print("Error during search process: $e");

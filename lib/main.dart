@@ -2,33 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
-import 'package:get_it/get_it.dart';
 import 'package:yoto/auth_screen.dart';
 import 'package:yoto/firebase_options.dart';
+import 'package:yoto/screens/anonymous_chat_screen.dart';
 import 'package:yoto/stores/auth_store.dart';
 import 'package:yoto/stores/profile_store.dart';
 import 'package:yoto/stores/match_store.dart';
+import 'package:yoto/stores/chat_store.dart';
 import 'package:yoto/services/socket_service.dart';
 import 'package:yoto/screens/home_screen.dart';
 import 'package:yoto/screens/profile_edit_screen.dart';
 import 'package:yoto/screens/search_screen.dart';
 import 'package:yoto/screens/profile_screen.dart';
 
-final getIt = GetIt.instance;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  
+
+  final socketService = SocketService();
   final authStore = AuthStore();
   await authStore.init();
 
   final profileStore = ProfileStore();
   final matchStore = MatchStore();
-
-  getIt.registerLazySingleton(() => SocketService());
-  final socketService = getIt<SocketService>();
-  socketService.connect();
+  final chatStore = ChatStore(socketService);
 
   runApp(
     MultiProvider(
@@ -36,7 +33,10 @@ void main() async {
         Provider<AuthStore>(create: (_) => authStore),
         Provider<ProfileStore>(create: (_) => profileStore),
         Provider<MatchStore>(create: (_) => matchStore),
-        Provider<SocketService>(create: (_) => socketService),
+        Provider<ChatStore>(
+          create: (_) => chatStore,
+          dispose: (_, store) => store.dispose(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -66,6 +66,13 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/profile_edit': (context) => const ProfileEditScreen(),
         '/search': (context) => const SearchScreen(),
+        '/anonymous_chat': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return AnonymousChatScreen(
+            chatId: args['chatId'],
+            otherUserId: args['otherUserId'],
+          );
+        },
       },
     );
   }
@@ -78,7 +85,7 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authStore = Provider.of<AuthStore>(context);
     final profileStore = Provider.of<ProfileStore>(context);
-    final socketService = Provider.of<SocketService>(context, listen: false);
+    final chatStore = Provider.of<ChatStore>(context, listen: false);
 
     return Observer(
       builder: (_) {
@@ -88,7 +95,7 @@ class AuthWrapper extends StatelessWidget {
             return ProfileEditScreen(isNewUser: profileStore.profileData == null);
           } else {
             // Register the user with the socket server when logged in
-            socketService.registerUser(authStore.currentUser!.uid);
+            chatStore.registerUser(authStore.currentUser!.uid);
             return const HomeScreen();
           }
         } else {

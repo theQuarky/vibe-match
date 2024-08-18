@@ -55,6 +55,7 @@ abstract class _MatchStore with Store {
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
+          print(change.doc);
           _handleNewMatch(change.doc, userId, onMatchFound);
         }
       }
