@@ -21,79 +21,74 @@ abstract class _ChatStore with Store {
   }
 
   void _initSocketListeners() {
-    _socketService.on('new_message', _handleNewMessage);
-    _socketService.on('chat_history', _handleChatHistory);
+    _socketService
+      ..on('new_message', _handleNewMessage)
+      ..on('chat_history', _handleChatHistory)
+      ..on('chat_ended', _handleChatEnded);
   }
 
   @action
-  void registerUser(String userId) {
-    _socketService.emit('register_user', {'userId': userId});
-  }
+  void registerUser(String userId) =>
+      _socketService.emit('register_user', {'userId': userId});
 
   @action
   void _handleNewMessage(dynamic data) {
     final chatId = data['chatId'];
-    final message = types.TextMessage(
-      author: types.User(id: data['senderId']),
-      id: data['id'],
-      text: data['text'],
-      createdAt: data['createdAt'],
-    );
-
-    if (!chatMessages.containsKey(chatId)) {
-      chatMessages[chatId] = ObservableList<types.Message>();
-    }
-    chatMessages[chatId]!.insert(0, message);
+    final message = _createMessage(data);
+    chatMessages
+        .putIfAbsent(chatId, () => ObservableList<types.Message>())
+        .insert(0, message);
   }
 
   @action
   void _handleChatHistory(dynamic data) {
     final chatId = data['chatId'];
-    final messages = (data['messages'] as List)
-        .map((msgData) => types.TextMessage(
-              author: types.User(id: msgData['senderId']),
-              id: msgData['id'],
-              text: msgData['text'],
-              createdAt: msgData['createdAt'],
-            ))
-        .toList();
-
+    final messages = (data['messages'] as List).map(_createMessage).toList();
     chatMessages[chatId] = ObservableList.of(messages);
   }
 
+  types.TextMessage _createMessage(dynamic msgData) => types.TextMessage(
+        author: types.User(id: msgData['senderId']),
+        id: msgData['id'],
+        text: msgData['text'],
+        createdAt: msgData['createdAt'],
+      );
+
   @action
-  Future<void> loadMessages(String chatId, {bool isAnonymous = false}) async {
-    _socketService.emit('join_chat', chatId);
-    _socketService.emit(
-        'get_chat_history', {'chatId': chatId, 'isAnonymous': isAnonymous});
+  void _handleChatEnded(dynamic data) {
+    final chatId = data['chatId'];
+    endedChatId = chatId;
+    chatMessages.remove(chatId);
   }
 
   @action
-  Future<void> sendMessage(String chatId, String text, String senderId,
-      {bool isAnonymous = false}) async {
+  Future<void> loadMessages(String chatId) async {
+    _socketService
+      ..emit('join_chat', chatId)
+      ..emit('get_chat_history', {'chatId': chatId});
+  }
+
+  @action
+  Future<void> sendMessage(String chatId, String text, String senderId) async {
     final message = {
       'chatId': chatId,
       'senderId': senderId,
       'text': text,
-      'isAnonymous': isAnonymous,
     };
 
     _socketService.emit('send_message', message);
 
     // Optimistically add the message to the local list
-    if (!chatMessages.containsKey(chatId)) {
-      chatMessages[chatId] = ObservableList<types.Message>();
-    }
-
-    chatMessages[chatId]!.insert(
-      0,
-      types.TextMessage(
-        author: types.User(id: senderId),
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: text,
-        createdAt: DateTime.now().millisecondsSinceEpoch,
-      ),
+    final localMessage = types.TextMessage(
+      author: types.User(id: senderId),
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      text: text,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
     );
+
+    chatMessages
+        .putIfAbsent(chatId, () => ObservableList<types.Message>())
+        .insert(0, localMessage);
   }
 
   @action
@@ -110,26 +105,19 @@ abstract class _ChatStore with Store {
   }
 
   @action
-  void clearAnonymousChat(String chatId) {
-    chatMessages.remove(chatId);
-    _socketService.emit('clear_anonymous_chat', {'chatId': chatId});
-    _socketService.emit('leave_chat', chatId);
-  }
-
-  @action
   void endChat(String chatId, String userId) {
     _socketService.emit('end_chat', {'chatId': chatId, 'userId': userId});
     chatMessages.remove(chatId);
     _socketService.emit('leave_chat', chatId);
   }
 
-  List<types.Message> getMessagesForChat(String chatId) {
-    return chatMessages[chatId] ?? [];
-  }
+  List<types.Message> getMessagesForChat(String chatId) =>
+      chatMessages[chatId] ?? [];
 
   void dispose() {
-    _socketService.off('new_message');
-    _socketService.off('chat_history');
-    _socketService.off('chat_ended');
+    _socketService
+      ..off('new_message')
+      ..off('chat_history')
+      ..off('chat_ended');
   }
 }

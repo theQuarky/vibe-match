@@ -33,50 +33,45 @@ class _SearchScreenState extends State<SearchScreen> {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
-    // Immediately update UI
-    matchStore.setInQueue(true);
+    matchStore.setSearching(true);
 
     try {
       Map<String, dynamic> requestBody = {
         'userId': userId,
+        if (_currentPosition != null)
+          'location': {
+            'latitude': _currentPosition!.latitude,
+            'longitude': _currentPosition!.longitude,
+          },
       };
 
-      if (_currentPosition != null) {
-        requestBody['location'] = {
-          'latitude': _currentPosition!.latitude,
-          'longitude': _currentPosition!.longitude,
-        };
-      }
-
-      // Perform background operations
       await matchStore.addToMatchQueue(requestBody);
-      matchStore.startListeningForMatches(userId, () {
-        stopSearch(matchStore);
-        Navigator.of(context)
-            .pushNamed('/anonymous_chat', arguments: matchStore.currentMatch);
-      });
+      matchStore.startListeningForMatches(
+        userId,
+        (String chatId, String otherUserId) {
+          stopSearch(matchStore);
+          Navigator.of(context).pushNamed('/anonymous_chat', arguments: {
+            'chatId': chatId,
+            'otherUserId': otherUserId,
+          });
+        },
+      );
     } catch (e) {
-      print("Error during search process: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error starting search: $e')),
       );
-      // Revert UI state if there's an error
-      matchStore.setInQueue(false);
+      matchStore.setSearching(false);
     }
   }
 
   Future<void> stopSearch(MatchStore matchStore) async {
-    // Immediately update UI
-    matchStore.setInQueue(false);
+    matchStore.setSearching(false);
 
     try {
-      // Perform background operations
       await matchStore.removeFromMatchQueue();
       matchStore.stopListeningForMatches();
     } catch (e) {
       print('Error stopping search: $e');
-      // Optionally revert UI state if there's an error
-      // matchStore.setInQueue(true);
     }
   }
 
@@ -93,10 +88,10 @@ class _SearchScreenState extends State<SearchScreen> {
           builder: (_) => Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (matchStore.isInQueue) const SearchAnimation(),
+              if (matchStore.isSearching) const SearchAnimation(),
               const SizedBox(height: 20),
               SearchButton(
-                isSearching: matchStore.isInQueue,
+                isSearching: matchStore.isSearching,
                 onStartSearch: () => startSearch(matchStore),
                 onStopSearch: () => stopSearch(matchStore),
               ),

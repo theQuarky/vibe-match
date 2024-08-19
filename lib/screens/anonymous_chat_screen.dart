@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:yoto/stores/auth_store.dart';
 import 'package:yoto/stores/chat_store.dart';
+import 'package:yoto/stores/match_store.dart';
 
 class AnonymousChatScreen extends StatefulWidget {
   final String chatId;
@@ -31,7 +32,10 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
     _startTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final chatStore = Provider.of<ChatStore>(context, listen: false);
-      chatStore.loadMessages(widget.chatId, isAnonymous: true);
+      chatStore.loadMessages(widget.chatId);
+
+      final matchStore = Provider.of<MatchStore>(context, listen: false);
+      matchStore.listenForChatEnd(widget.chatId, _handleChatEnded);
     });
   }
 
@@ -50,8 +54,13 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
   void _endChat() {
     _timer.cancel();
     final chatStore = Provider.of<ChatStore>(context, listen: false);
-    chatStore.clearAnonymousChat(widget.chatId);
-    Navigator.of(context).pop();
+    chatStore.endChat(widget.chatId, widget.otherUserId);
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
+  void _handleChatEnded(String chatId) {
+    _timer.cancel();
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   Future<void> _addFriend() async {
@@ -62,7 +71,7 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Friend added successfully!')),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to add friend: $e')),
@@ -80,75 +89,80 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
   Widget build(BuildContext context) {
     final authStore = Provider.of<AuthStore>(context);
     final chatStore = Provider.of<ChatStore>(context);
+    final matchStore = Provider.of<MatchStore>(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Theme(
-      data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: isDarkMode ? Colors.grey[900] : Colors.teal,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Anonymous Chat'),
-              Text(
-                _formatTime(_secondsRemaining),
-                style: const TextStyle(fontSize: 12),
+    return Observer(
+      builder: (_) {
+        if (matchStore.endedChatId == widget.chatId) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/home');
+          });
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+
+        return Theme(
+          data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: isDarkMode ? Colors.grey[900] : Colors.teal,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Anonymous Chat'),
+                  Text(
+                    _formatTime(_secondsRemaining),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
               ),
-            ],
-          ),
-          actions: [
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'addFriend') {
-                  _addFriend();
-                } else if (value == 'endChat') {
-                  _endChat();
-                }
-              },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'addFriend',
-                  child: Text('Add Friend'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'endChat',
-                  child: Text('End Chat'),
+              actions: [
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'addFriend') {
+                      _addFriend();
+                    } else if (value == 'endChat') {
+                      _endChat();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'addFriend',
+                      child: Text('Add Friend'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'endChat',
+                      child: Text('End Chat'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-        body: Observer(builder: (_) {
-          if (chatStore.endedChatId == widget.chatId) {
-            // Chat has ended, navigate back to home
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.of(context).pushReplacementNamed('/home');
-            });
-            return const Center(child: CircularProgressIndicator());
-          }
-          return Chat(
-            messages: chatStore.getMessagesForChat(widget.chatId),
-            onSendPressed: (types.PartialText message) {
-              chatStore.sendMessage(
-                widget.chatId,
-                message.text,
-                authStore.currentUser!.uid,
-                isAnonymous: true,
-              );
-            },
-            user: types.User(id: authStore.currentUser!.uid),
-            theme:
-                isDarkMode ? const DarkChatTheme() : const DefaultChatTheme(),
-          );
-        }),
-      ),
+            body: Chat(
+              messages: chatStore.getMessagesForChat(widget.chatId),
+              onSendPressed: (types.PartialText message) {
+                chatStore.sendMessage(
+                  widget.chatId,
+                  message.text,
+                  authStore.currentUser!.uid,
+                );
+              },
+              user: types.User(id: authStore.currentUser!.uid),
+              theme:
+                  isDarkMode ? const DarkChatTheme() : const DefaultChatTheme(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   @override
   void dispose() {
     _timer.cancel();
+    final matchStore = Provider.of<MatchStore>(context, listen: false);
+    matchStore.stopListeningForChatEnd();
     super.dispose();
   }
 }

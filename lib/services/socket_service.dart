@@ -8,7 +8,7 @@ class SocketService {
   }
 
   void _initSocket() {
-    socket = IO.io('https://1fe7-2409-40c1-5025-6d04-1867-c339-b731-605c.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://41bf-2409-40c1-5025-6d04-6fd2-722-eb8f-8ab2.ngrok-free.app', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

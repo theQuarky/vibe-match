@@ -45,19 +45,17 @@ mixin _$ChatStore on _ChatStore, Store {
       AsyncAction('_ChatStore.loadMessages', context: context);
 
   @override
-  Future<void> loadMessages(String chatId, {bool isAnonymous = false}) {
-    return _$loadMessagesAsyncAction
-        .run(() => super.loadMessages(chatId, isAnonymous: isAnonymous));
+  Future<void> loadMessages(String chatId) {
+    return _$loadMessagesAsyncAction.run(() => super.loadMessages(chatId));
   }
 
   late final _$sendMessageAsyncAction =
       AsyncAction('_ChatStore.sendMessage', context: context);
 
   @override
-  Future<void> sendMessage(String chatId, String text, String senderId,
-      {bool isAnonymous = false}) {
-    return _$sendMessageAsyncAction.run(() =>
-        super.sendMessage(chatId, text, senderId, isAnonymous: isAnonymous));
+  Future<void> sendMessage(String chatId, String text, String senderId) {
+    return _$sendMessageAsyncAction
+        .run(() => super.sendMessage(chatId, text, senderId));
   }
 
   late final _$convertToPermamentChatAsyncAction =
@@ -107,11 +105,11 @@ mixin _$ChatStore on _ChatStore, Store {
   }
 
   @override
-  void clearAnonymousChat(String chatId) {
+  void _handleChatEnded(dynamic data) {
     final _$actionInfo = _$_ChatStoreActionController.startAction(
-        name: '_ChatStore.clearAnonymousChat');
+        name: '_ChatStore._handleChatEnded');
     try {
-      return super.clearAnonymousChat(chatId);
+      return super._handleChatEnded(data);
     } finally {
       _$_ChatStoreActionController.endAction(_$actionInfo);
     }

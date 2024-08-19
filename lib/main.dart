@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:yoto/auth_screen.dart';
 import 'package:yoto/firebase_options.dart';
 import 'package:yoto/screens/anonymous_chat_screen.dart';
+import 'package:yoto/services/serverless_service.dart';
 import 'package:yoto/stores/auth_store.dart';
 import 'package:yoto/stores/profile_store.dart';
 import 'package:yoto/stores/match_store.dart';
@@ -20,11 +22,13 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final socketService = SocketService();
+  final serverlessService = ServerlessService();
+  final firestore = FirebaseFirestore.instance;
   final authStore = AuthStore();
   await authStore.init();
 
   final profileStore = ProfileStore();
-  final matchStore = MatchStore();
+  final matchStore = MatchStore(socketService, serverlessService, firestore);
   final chatStore = ChatStore(socketService);
 
   runApp(
@@ -67,7 +71,8 @@ class MyApp extends StatelessWidget {
         '/profile_edit': (context) => const ProfileEditScreen(),
         '/search': (context) => const SearchScreen(),
         '/anonymous_chat': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
           return AnonymousChatScreen(
             chatId: args['chatId'],
             otherUserId: args['otherUserId'],
@@ -92,7 +97,8 @@ class AuthWrapper extends StatelessWidget {
         if (authStore.isLoggedIn) {
           profileStore.fetchProfileData();
           if (!profileStore.isProfileComplete) {
-            return ProfileEditScreen(isNewUser: profileStore.profileData == null);
+            return ProfileEditScreen(
+                isNewUser: profileStore.profileData == null);
           } else {
             // Register the user with the socket server when logged in
             chatStore.registerUser(authStore.currentUser!.uid);
