@@ -36,7 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
     matchStore.setSearching(true);
 
     try {
-      Map<String, dynamic> requestBody = {
+      Map<String, dynamic> userData = {
         'userId': userId,
         if (_currentPosition != null)
           'location': {
@@ -45,7 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
           },
       };
 
-      await matchStore.addToMatchQueue(requestBody);
+      await matchStore.addToMatchQueue(userData);
       matchStore.startListeningForMatches(
         userId,
         (String chatId, String otherUserId) {

@@ -9,28 +9,51 @@ class ChatStore = _ChatStore with _$ChatStore;
 abstract class _ChatStore with Store {
   final SocketService _socketService;
 
-  @observable
-  ObservableMap<String, ObservableList<types.Message>> chatMessages =
-      ObservableMap();
-
-  @observable
-  String? endedChatId;
-
   _ChatStore(this._socketService) {
     _initSocketListeners();
   }
 
+  // Observable state
+  @observable
+  ObservableMap<String, ObservableList<types.Message>> chatMessages =
+      ObservableMap();
+
+  // Non-action methods
+
+  /// Initializes socket event listeners
   void _initSocketListeners() {
     _socketService
       ..on('new_message', _handleNewMessage)
-      ..on('chat_history', _handleChatHistory)
-      ..on('chat_ended', _handleChatEnded);
+      ..on('chat_history', _handleChatHistory);
   }
 
+  /// Creates a TextMessage object from raw message data
+  types.TextMessage _createMessage(dynamic msgData) => types.TextMessage(
+        author: types.User(id: msgData['senderId']),
+        id: msgData['id'],
+        text: msgData['text'],
+        createdAt: msgData['createdAt'],
+      );
+
+  /// Retrieves messages for a specific chat
+  List<types.Message> getMessagesForChat(String chatId) =>
+      chatMessages[chatId] ?? [];
+
+  /// Disposes of the store, removing socket listeners
+  void dispose() {
+    _socketService
+      ..off('new_message')
+      ..off('chat_history');
+  }
+
+  // Action methods
+
+  /// Registers a user with the socket service
   @action
   void registerUser(String userId) =>
       _socketService.emit('register_user', {'userId': userId});
 
+  /// Handles new incoming messages
   @action
   void _handleNewMessage(dynamic data) {
     final chatId = data['chatId'];
@@ -40,6 +63,7 @@ abstract class _ChatStore with Store {
         .insert(0, message);
   }
 
+  /// Handles incoming chat history
   @action
   void _handleChatHistory(dynamic data) {
     final chatId = data['chatId'];
@@ -47,20 +71,7 @@ abstract class _ChatStore with Store {
     chatMessages[chatId] = ObservableList.of(messages);
   }
 
-  types.TextMessage _createMessage(dynamic msgData) => types.TextMessage(
-        author: types.User(id: msgData['senderId']),
-        id: msgData['id'],
-        text: msgData['text'],
-        createdAt: msgData['createdAt'],
-      );
-
-  @action
-  void _handleChatEnded(dynamic data) {
-    final chatId = data['chatId'];
-    endedChatId = chatId;
-    chatMessages.remove(chatId);
-  }
-
+  /// Loads messages for a specific chat
   @action
   Future<void> loadMessages(String chatId) async {
     _socketService
@@ -68,6 +79,7 @@ abstract class _ChatStore with Store {
       ..emit('get_chat_history', {'chatId': chatId});
   }
 
+  /// Sends a new message
   @action
   Future<void> sendMessage(String chatId, String text, String senderId) async {
     final message = {
@@ -91,6 +103,7 @@ abstract class _ChatStore with Store {
         .insert(0, localMessage);
   }
 
+  /// Converts an anonymous chat to a permanent chat
   @action
   Future<void> convertToPermamentChat(
       String anonymousChatId, String permanentChatId) async {
@@ -102,22 +115,5 @@ abstract class _ChatStore with Store {
     // Update local state
     chatMessages[permanentChatId] = chatMessages[anonymousChatId]!;
     chatMessages.remove(anonymousChatId);
-  }
-
-  @action
-  void endChat(String chatId, String userId) {
-    _socketService.emit('end_chat', {'chatId': chatId, 'userId': userId});
-    chatMessages.remove(chatId);
-    _socketService.emit('leave_chat', chatId);
-  }
-
-  List<types.Message> getMessagesForChat(String chatId) =>
-      chatMessages[chatId] ?? [];
-
-  void dispose() {
-    _socketService
-      ..off('new_message')
-      ..off('chat_history')
-      ..off('chat_ended');
   }
 }

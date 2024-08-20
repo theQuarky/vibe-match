@@ -25,22 +25,6 @@ mixin _$ChatStore on _ChatStore, Store {
     });
   }
 
-  late final _$endedChatIdAtom =
-      Atom(name: '_ChatStore.endedChatId', context: context);
-
-  @override
-  String? get endedChatId {
-    _$endedChatIdAtom.reportRead();
-    return super.endedChatId;
-  }
-
-  @override
-  set endedChatId(String? value) {
-    _$endedChatIdAtom.reportWrite(value, super.endedChatId, () {
-      super.endedChatId = value;
-    });
-  }
-
   late final _$loadMessagesAsyncAction =
       AsyncAction('_ChatStore.loadMessages', context: context);
 
@@ -105,32 +89,9 @@ mixin _$ChatStore on _ChatStore, Store {
   }
 
   @override
-  void _handleChatEnded(dynamic data) {
-    final _$actionInfo = _$_ChatStoreActionController.startAction(
-        name: '_ChatStore._handleChatEnded');
-    try {
-      return super._handleChatEnded(data);
-    } finally {
-      _$_ChatStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void endChat(String chatId, String userId) {
-    final _$actionInfo =
-        _$_ChatStoreActionController.startAction(name: '_ChatStore.endChat');
-    try {
-      return super.endChat(chatId, userId);
-    } finally {
-      _$_ChatStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
   String toString() {
     return '''
-chatMessages: ${chatMessages},
-endedChatId: ${endedChatId}
+chatMessages: ${chatMessages}
     ''';
   }
 }

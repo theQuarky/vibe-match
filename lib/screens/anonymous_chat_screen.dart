@@ -33,9 +33,6 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final chatStore = Provider.of<ChatStore>(context, listen: false);
       chatStore.loadMessages(widget.chatId);
-
-      final matchStore = Provider.of<MatchStore>(context, listen: false);
-      matchStore.listenForChatEnd(widget.chatId, _handleChatEnded);
     });
   }
 
@@ -53,28 +50,22 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
 
   void _endChat() {
     _timer.cancel();
-    final chatStore = Provider.of<ChatStore>(context, listen: false);
-    chatStore.endChat(widget.chatId, widget.otherUserId);
+    final matchStore = Provider.of<MatchStore>(context, listen: false);
+    matchStore.endChat(widget.chatId, widget.otherUserId);
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
-  void _handleChatEnded(String chatId) {
-    _timer.cancel();
-    Navigator.of(context).pushReplacementNamed('/home');
-  }
-
-  Future<void> _addFriend() async {
-    final chatStore = Provider.of<ChatStore>(context, listen: false);
+  Future<void> _sendFriendRequest() async {
+    final matchStore = Provider.of<MatchStore>(context, listen: false);
+    final authStore = Provider.of<AuthStore>(context, listen: false);
     try {
-      await chatStore.convertToPermamentChat(
-          widget.chatId, 'new_permanent_chat_id');
+      matchStore.sendFriendRequest(authStore.currentUser!.uid, widget.chatId);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Friend added successfully!')),
+        const SnackBar(content: Text('Friend request sent!')),
       );
-      Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add friend: $e')),
+        SnackBar(content: Text('Failed to send friend request: $e')),
       );
     }
   }
@@ -94,7 +85,7 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
 
     return Observer(
       builder: (_) {
-        if (matchStore.endedChatId == widget.chatId) {
+        if (matchStore.isChatEnded || matchStore.areFriendsNow) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.of(context).pushReplacementNamed('/home');
           });
@@ -120,16 +111,16 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
               actions: [
                 PopupMenuButton<String>(
                   onSelected: (value) {
-                    if (value == 'addFriend') {
-                      _addFriend();
+                    if (value == 'sendFriendRequest') {
+                      _sendFriendRequest();
                     } else if (value == 'endChat') {
                       _endChat();
                     }
                   },
                   itemBuilder: (BuildContext context) => [
                     const PopupMenuItem<String>(
-                      value: 'addFriend',
-                      child: Text('Add Friend'),
+                      value: 'sendFriendRequest',
+                      child: Text('Send Friend Request'),
                     ),
                     const PopupMenuItem<String>(
                       value: 'endChat',
@@ -161,8 +152,6 @@ class AnonymousChatScreenState extends State<AnonymousChatScreen> {
   @override
   void dispose() {
     _timer.cancel();
-    final matchStore = Provider.of<MatchStore>(context, listen: false);
-    matchStore.stopListeningForChatEnd();
     super.dispose();
   }
 }
