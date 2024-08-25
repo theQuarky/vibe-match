@@ -49,6 +49,22 @@ mixin _$ProfileStore on _ProfileStore, Store {
     return _$updateProfileAsyncAction.run(() => super.updateProfile(newData));
   }
 
+  late final _$_loadFromCacheAsyncAction =
+      AsyncAction('_ProfileStore._loadFromCache', context: context);
+
+  @override
+  Future<void> _loadFromCache() {
+    return _$_loadFromCacheAsyncAction.run(() => super._loadFromCache());
+  }
+
+  late final _$_saveToCacheAsyncAction =
+      AsyncAction('_ProfileStore._saveToCache', context: context);
+
+  @override
+  Future<void> _saveToCache() {
+    return _$_saveToCacheAsyncAction.run(() => super._saveToCache());
+  }
+
   @override
   String toString() {
     return '''

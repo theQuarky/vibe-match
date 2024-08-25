@@ -52,7 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
           stopSearch(matchStore);
           Navigator.of(context).pushNamed('/anonymous_chat', arguments: {
             'chatId': chatId,
-            'otherUserId': otherUserId,
+            'friendId': otherUserId,
           });
         },
       );

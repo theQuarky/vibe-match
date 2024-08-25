@@ -33,8 +33,10 @@ class ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _loadUserData() async {
+    if (!mounted) return; // Add this check
     final profileStore = Provider.of<ProfileStore>(context, listen: false);
     if (profileStore.profileData != null) {
+      if (!mounted) return; // Add this check
       setState(() {
         _nameController.text = profileStore.profileData!['displayName'] ?? '';
         _bioController.text = profileStore.profileData!['bio'] ?? '';
@@ -44,6 +46,7 @@ class ProfileEditScreenState extends State<ProfileEditScreen> {
       });
     } else {
       await profileStore.fetchProfileData();
+      if (!mounted) return; // Add this check
       setState(() {
         _nameController.text = profileStore.profileData!['displayName'] ?? '';
         _bioController.text = profileStore.profileData!['bio'] ?? '';

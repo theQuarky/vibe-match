@@ -25,6 +25,22 @@ mixin _$ChatStore on _ChatStore, Store {
     });
   }
 
+  late final _$currentChatTypeAtom =
+      Atom(name: '_ChatStore.currentChatType', context: context);
+
+  @override
+  String? get currentChatType {
+    _$currentChatTypeAtom.reportRead();
+    return super.currentChatType;
+  }
+
+  @override
+  set currentChatType(String? value) {
+    _$currentChatTypeAtom.reportWrite(value, super.currentChatType, () {
+      super.currentChatType = value;
+    });
+  }
+
   late final _$loadMessagesAsyncAction =
       AsyncAction('_ChatStore.loadMessages', context: context);
 
@@ -42,14 +58,31 @@ mixin _$ChatStore on _ChatStore, Store {
         .run(() => super.sendMessage(chatId, text, senderId));
   }
 
-  late final _$convertToPermamentChatAsyncAction =
-      AsyncAction('_ChatStore.convertToPermamentChat', context: context);
+  late final _$sendFriendRequestAsyncAction =
+      AsyncAction('_ChatStore.sendFriendRequest', context: context);
 
   @override
-  Future<void> convertToPermamentChat(
+  Future<void> sendFriendRequest(String chatId, String userId) {
+    return _$sendFriendRequestAsyncAction
+        .run(() => super.sendFriendRequest(chatId, userId));
+  }
+
+  late final _$endChatAsyncAction =
+      AsyncAction('_ChatStore.endChat', context: context);
+
+  @override
+  Future<void> endChat(String chatId, String userId) {
+    return _$endChatAsyncAction.run(() => super.endChat(chatId, userId));
+  }
+
+  late final _$convertToPermanentAsyncAction =
+      AsyncAction('_ChatStore.convertToPermanent', context: context);
+
+  @override
+  Future<void> convertToPermanent(
       String anonymousChatId, String permanentChatId) {
-    return _$convertToPermamentChatAsyncAction.run(
-        () => super.convertToPermamentChat(anonymousChatId, permanentChatId));
+    return _$convertToPermanentAsyncAction
+        .run(() => super.convertToPermanent(anonymousChatId, permanentChatId));
   }
 
   late final _$_ChatStoreActionController =
@@ -89,9 +122,32 @@ mixin _$ChatStore on _ChatStore, Store {
   }
 
   @override
+  void _handleChatType(dynamic data) {
+    final _$actionInfo = _$_ChatStoreActionController.startAction(
+        name: '_ChatStore._handleChatType');
+    try {
+      return super._handleChatType(data);
+    } finally {
+      _$_ChatStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void _handleFriendRequestAccepted(dynamic data) {
+    final _$actionInfo = _$_ChatStoreActionController.startAction(
+        name: '_ChatStore._handleFriendRequestAccepted');
+    try {
+      return super._handleFriendRequestAccepted(data);
+    } finally {
+      _$_ChatStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
-chatMessages: ${chatMessages}
+chatMessages: ${chatMessages},
+currentChatType: ${currentChatType}
     ''';
   }
 }

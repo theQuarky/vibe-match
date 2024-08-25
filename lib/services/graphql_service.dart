@@ -83,6 +83,48 @@ class Graphqlservice {
     return transformedProfile;
   }
 
+  Future<Map<String, dynamic>?> getFriendProfile(String friendId) async {
+    final String query = '''
+      query {
+        getFriendProfile(friendId: "$friendId") {
+          displayName
+          bio
+          profileCompleted
+          birthDate
+          profileImageUrl
+          gender
+        }
+      }
+    ''';
+
+    final result = await _sendRequest(query);
+
+    if (result == null || result['errors'] != null) {
+      print('GraphQL query error: ${result?['errors']}');
+      return null;
+    }
+
+    if (result['data'] == null || result['data']['getFriendProfile'] == null) {
+      print('No data returned from the query');
+      return null;
+    }
+
+    final Map<String, dynamic> friendProfile =
+        result['data']['getFriendProfile'];
+
+    // Transform the data into the desired shape
+    Map<String, dynamic> transformedProfile = {
+      'profileImageUrl': friendProfile['profileImageUrl'],
+      'gender': friendProfile['gender'] == 'female' ? 'Female' : 'Male',
+      'displayName': friendProfile['displayName'],
+      'profileCompleted': friendProfile['profileCompleted'],
+      'bio': friendProfile['bio'],
+      'birthDate': _formatDate(friendProfile['birthDate']),
+    };
+    print('Transformed profile: $transformedProfile');
+    return transformedProfile;
+  }
+
   String _formatDate(String timestamp) {
     DateTime date = DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp));
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

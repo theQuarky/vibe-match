@@ -13,49 +13,49 @@ abstract class _ChatStore with Store {
     _initSocketListeners();
   }
 
-  // Observable state
   @observable
   ObservableMap<String, ObservableList<types.Message>> chatMessages =
       ObservableMap();
 
-  // Non-action methods
+  @observable
+  String? currentChatType;
 
-  /// Initializes socket event listeners
   void _initSocketListeners() {
     _socketService
       ..on('new_message', _handleNewMessage)
-      ..on('chat_history', _handleChatHistory);
+      ..on('chat_history', _handleChatHistory)
+      ..on('chat_type', _handleChatType)
+      ..on('friend_request_accepted', _handleFriendRequestAccepted);
   }
 
-  /// Creates a TextMessage object from raw message data
-  types.TextMessage _createMessage(dynamic msgData) => types.TextMessage(
-        author: types.User(id: msgData['senderId']),
-        id: msgData['id'],
-        text: msgData['text'],
-        createdAt: msgData['createdAt'],
-      );
+  types.TextMessage _createMessage(dynamic msgData) {
+    print('msgData $msgData');
+    return types.TextMessage(
+      author: types.User(id: msgData['senderId']),
+      id: msgData['id'],
+      text: msgData['text'],
+      createdAt: msgData['createdAt'] as int,
+    );
+  }
 
-  /// Retrieves messages for a specific chat
   List<types.Message> getMessagesForChat(String chatId) =>
       chatMessages[chatId] ?? [];
 
-  /// Disposes of the store, removing socket listeners
   void dispose() {
     _socketService
       ..off('new_message')
-      ..off('chat_history');
+      ..off('chat_history')
+      ..off('chat_type')
+      ..off('friend_request_accepted');
   }
 
-  // Action methods
-
-  /// Registers a user with the socket service
   @action
   void registerUser(String userId) =>
-      _socketService.emit('register_user', {'userId': userId});
+      _socketService.emit('register_user', userId);
 
-  /// Handles new incoming messages
   @action
   void _handleNewMessage(dynamic data) {
+    print('event listener called with data $data');
     final chatId = data['chatId'];
     final message = _createMessage(data);
     chatMessages
@@ -63,7 +63,6 @@ abstract class _ChatStore with Store {
         .insert(0, message);
   }
 
-  /// Handles incoming chat history
   @action
   void _handleChatHistory(dynamic data) {
     final chatId = data['chatId'];
@@ -71,15 +70,25 @@ abstract class _ChatStore with Store {
     chatMessages[chatId] = ObservableList.of(messages);
   }
 
-  /// Loads messages for a specific chat
   @action
-  Future<void> loadMessages(String chatId) async {
-    _socketService
-      ..emit('join_chat', chatId)
-      ..emit('get_chat_history', {'chatId': chatId});
+  void _handleChatType(dynamic data) {
+    currentChatType = data['type'];
   }
 
-  /// Sends a new message
+  @action
+  void _handleFriendRequestAccepted(dynamic data) {
+    // Handle friend request accepted event
+    // You might want to update UI or perform some action here
+    print('Friend request accepted for chat: ${data['chatId']}');
+  }
+
+  @action
+  Future<void> loadMessages(String chatId) async {
+    _socketService.emit('join_chat', chatId);
+    _socketService.emit('get_chat_history', {'chatId': chatId});
+    _socketService.emit('get_chat_type', {'chatId': chatId});
+  }
+
   @action
   Future<void> sendMessage(String chatId, String text, String senderId) async {
     final message = {
@@ -103,17 +112,22 @@ abstract class _ChatStore with Store {
         .insert(0, localMessage);
   }
 
-  /// Converts an anonymous chat to a permanent chat
   @action
-  Future<void> convertToPermamentChat(
+  Future<void> sendFriendRequest(String chatId, String userId) async {
+    _socketService.emit('add_friend', {'userId': userId, 'chatId': chatId});
+  }
+
+  @action
+  Future<void> endChat(String chatId, String userId) async {
+    _socketService.emit('end_chat', {'chatId': chatId, 'userId': userId});
+  }
+
+  @action
+  Future<void> convertToPermanent(
       String anonymousChatId, String permanentChatId) async {
     _socketService.emit('convert_to_permanent', {
       'anonymousChatId': anonymousChatId,
-      'permanentChatId': permanentChatId,
+      'permanentChatId': permanentChatId
     });
-
-    // Update local state
-    chatMessages[permanentChatId] = chatMessages[anonymousChatId]!;
-    chatMessages.remove(anonymousChatId);
   }
 }

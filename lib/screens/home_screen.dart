@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yoto/screens/friend_list_screen.dart';
 import 'package:yoto/screens/profile_screen.dart';
 import 'package:yoto/screens/search_screen.dart';
 
@@ -13,7 +14,7 @@ class HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final List<Widget> _screens = [
     // FriendsListScreen(),
-    const Text('Friend list screen'),
+    const FriendListScreen(),
     const SearchScreen(),
     const ProfileScreen(),
   ];

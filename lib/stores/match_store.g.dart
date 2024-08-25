@@ -121,6 +121,34 @@ mixin _$MatchStore on _MatchStore, Store {
     });
   }
 
+  late final _$addToMatchQueueAsyncAction =
+      AsyncAction('_MatchStore.addToMatchQueue', context: context);
+
+  @override
+  Future<void> addToMatchQueue(Map<String, dynamic> userData) {
+    return _$addToMatchQueueAsyncAction
+        .run(() => super.addToMatchQueue(userData));
+  }
+
+  late final _$removeFromMatchQueueAsyncAction =
+      AsyncAction('_MatchStore.removeFromMatchQueue', context: context);
+
+  @override
+  Future<void> removeFromMatchQueue() {
+    return _$removeFromMatchQueueAsyncAction
+        .run(() => super.removeFromMatchQueue());
+  }
+
+  late final _$convertToPermanentAsyncAction =
+      AsyncAction('_MatchStore.convertToPermanent', context: context);
+
+  @override
+  Future<void> convertToPermanent(
+      String anonymousChatId, String permanentChatId) {
+    return _$convertToPermanentAsyncAction
+        .run(() => super.convertToPermanent(anonymousChatId, permanentChatId));
+  }
+
   late final _$_MatchStoreActionController =
       ActionController(name: '_MatchStore', context: context);
 
@@ -152,28 +180,6 @@ mixin _$MatchStore on _MatchStore, Store {
         name: '_MatchStore.resetMatchState');
     try {
       return super.resetMatchState();
-    } finally {
-      _$_MatchStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  Future<void> addToMatchQueue(Map<String, dynamic> userData) {
-    final _$actionInfo = _$_MatchStoreActionController.startAction(
-        name: '_MatchStore.addToMatchQueue');
-    try {
-      return super.addToMatchQueue(userData);
-    } finally {
-      _$_MatchStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  Future<void> removeFromMatchQueue() {
-    final _$actionInfo = _$_MatchStoreActionController.startAction(
-        name: '_MatchStore.removeFromMatchQueue');
-    try {
-      return super.removeFromMatchQueue();
     } finally {
       _$_MatchStoreActionController.endAction(_$actionInfo);
     }

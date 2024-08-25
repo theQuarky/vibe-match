@@ -1,16 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:yoto/auth_screen.dart';
 import 'package:yoto/firebase_options.dart';
-import 'package:yoto/screens/anonymous_chat_screen.dart';
+// import 'package:yoto/screens/anonymous_chat_screen';
+import 'package:yoto/screens/chat_screen.dart';
+// import 'package:yoto/screens/chat_screen.dart';
+import 'package:yoto/services/firestore_service.dart';
+import 'package:yoto/services/graphql_service.dart';
 import 'package:yoto/services/serverless_service.dart';
 import 'package:yoto/stores/auth_store.dart';
 import 'package:yoto/stores/profile_store.dart';
 import 'package:yoto/stores/match_store.dart';
 import 'package:yoto/stores/chat_store.dart';
+import 'package:yoto/stores/friend_store.dart';
 import 'package:yoto/services/socket_service.dart';
 import 'package:yoto/screens/home_screen.dart';
 import 'package:yoto/screens/profile_edit_screen.dart';
@@ -23,13 +28,17 @@ void main() async {
 
   final socketService = SocketService();
   final serverlessService = ServerlessService();
-  final firestore = FirebaseFirestore.instance;
+  final firestoreService = FirestoreService();
+  final graphqlservice = Graphqlservice();
+
   final authStore = AuthStore();
   await authStore.init();
 
   final profileStore = ProfileStore();
-  final matchStore = MatchStore(socketService, serverlessService, firestore);
+  final matchStore =
+      MatchStore(socketService, serverlessService, firestoreService);
   final chatStore = ChatStore(socketService);
+  final friendStore = FriendStore(firestoreService, graphqlservice);
 
   runApp(
     MultiProvider(
@@ -41,6 +50,7 @@ void main() async {
           create: (_) => chatStore,
           dispose: (_, store) => store.dispose(),
         ),
+        Provider<FriendStore>(create: (_) => friendStore),
       ],
       child: const MyApp(),
     ),
@@ -52,6 +62,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Map<String, Widget Function(BuildContext)> routes = {
+      '/home': (context) => const HomeScreen(),
+      '/auth': (context) => const AuthScreen(),
+      '/profile': (context) => const ProfileScreen(),
+      '/profile_edit': (context) => const ProfileEditScreen(),
+      '/search': (context) => const SearchScreen(),
+    };
+
     return MaterialApp(
       title: 'Yoto Chat App',
       theme: ThemeData(
@@ -73,9 +91,19 @@ class MyApp extends StatelessWidget {
         '/anonymous_chat': (context) {
           final args = ModalRoute.of(context)!.settings.arguments
               as Map<String, dynamic>;
-          return AnonymousChatScreen(
+          return ChatScreen(
             chatId: args['chatId'],
-            otherUserId: args['otherUserId'],
+            friendId: args['friendId'],
+            isFriend: false,
+          );
+        },
+        '/chat': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
+          return ChatScreen(
+            chatId: args['chatId'],
+            friendId: args['friendId'],
+            isFriend: true,
           );
         },
       },
@@ -91,6 +119,7 @@ class AuthWrapper extends StatelessWidget {
     final authStore = Provider.of<AuthStore>(context);
     final profileStore = Provider.of<ProfileStore>(context);
     final chatStore = Provider.of<ChatStore>(context, listen: false);
+    final friendStore = Provider.of<FriendStore>(context, listen: false);
 
     return Observer(
       builder: (_) {
@@ -102,6 +131,8 @@ class AuthWrapper extends StatelessWidget {
           } else {
             // Register the user with the socket server when logged in
             chatStore.registerUser(authStore.currentUser!.uid);
+            // Load friends list
+            friendStore.loadFriends(authStore.currentUser!.uid);
             return const HomeScreen();
           }
         } else {
