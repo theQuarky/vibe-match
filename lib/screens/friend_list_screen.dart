@@ -66,7 +66,7 @@ class FriendListScreenState extends State<FriendListScreen> {
                 Navigator.of(context).pushNamed(
                   '/chat',
                   arguments: {
-                    'chatId': friend.id, // This is your unique chat ID
+                    'chatId': friend.chatId, // This is your unique chat ID
                     'friendId': friend.id, // The friend's user ID
                     'isFriend': true
                   },

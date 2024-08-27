@@ -125,7 +125,7 @@ mixin _$MatchStore on _MatchStore, Store {
       AsyncAction('_MatchStore.addToMatchQueue', context: context);
 
   @override
-  Future<void> addToMatchQueue(Map<String, dynamic> userData) {
+  Future<bool> addToMatchQueue(Map<String, dynamic> userData) {
     return _$addToMatchQueueAsyncAction
         .run(() => super.addToMatchQueue(userData));
   }

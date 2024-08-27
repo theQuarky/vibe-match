@@ -7,6 +7,7 @@ class ChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool isFriend;
   final int timerValue;
   final VoidCallback onEndChat;
+  final VoidCallback onAddFriend;
 
   const ChatAppBar({
     Key? key,
@@ -14,6 +15,7 @@ class ChatAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.isFriend,
     required this.timerValue,
     required this.onEndChat,
+    required this.onAddFriend,
   }) : super(key: key);
 
   @override
@@ -26,6 +28,7 @@ class ChatAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _ChatAppBarState extends State<ChatAppBar> {
   String friendName = 'Strange';
   String avatar = '';
+  bool _profileLoaded = false;
 
   @override
   void initState() {
@@ -35,13 +38,25 @@ class _ChatAppBarState extends State<ChatAppBar> {
     }
   }
 
+  @override
+  void didUpdateWidget(ChatAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isFriend != oldWidget.isFriend) {
+      if (widget.isFriend && !_profileLoaded) {
+        _loadFriendProfile();
+      }
+    }
+  }
+
   Future<void> _loadFriendProfile() async {
+    if (_profileLoaded) return;
     final friendStore = Provider.of<FriendStore>(context, listen: false);
     final friendProfile = await friendStore.getFriendProfile(widget.friendId);
     if (friendProfile != null) {
       setState(() {
         friendName = friendProfile['displayName'];
         avatar = friendProfile['profileImageUrl'];
+        _profileLoaded = true;
       });
     }
   }
@@ -84,7 +99,7 @@ class _ChatAppBarState extends State<ChatAppBar> {
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'sendFriendRequest') {
-                // Implement send friend request
+                widget.onAddFriend();
               } else if (value == 'endChat') {
                 widget.onEndChat();
               }
@@ -100,7 +115,7 @@ class _ChatAppBarState extends State<ChatAppBar> {
               ),
             ],
           ),
-        ] else ...[
+        ] else if (_profileLoaded) ...[
           CircleAvatar(
             backgroundImage: NetworkImage(avatar),
             radius: 18,

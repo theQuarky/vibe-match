@@ -58,23 +58,6 @@ mixin _$ChatStore on _ChatStore, Store {
         .run(() => super.sendMessage(chatId, text, senderId));
   }
 
-  late final _$sendFriendRequestAsyncAction =
-      AsyncAction('_ChatStore.sendFriendRequest', context: context);
-
-  @override
-  Future<void> sendFriendRequest(String chatId, String userId) {
-    return _$sendFriendRequestAsyncAction
-        .run(() => super.sendFriendRequest(chatId, userId));
-  }
-
-  late final _$endChatAsyncAction =
-      AsyncAction('_ChatStore.endChat', context: context);
-
-  @override
-  Future<void> endChat(String chatId, String userId) {
-    return _$endChatAsyncAction.run(() => super.endChat(chatId, userId));
-  }
-
   late final _$convertToPermanentAsyncAction =
       AsyncAction('_ChatStore.convertToPermanent', context: context);
 
@@ -127,17 +110,6 @@ mixin _$ChatStore on _ChatStore, Store {
         name: '_ChatStore._handleChatType');
     try {
       return super._handleChatType(data);
-    } finally {
-      _$_ChatStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void _handleFriendRequestAccepted(dynamic data) {
-    final _$actionInfo = _$_ChatStoreActionController.startAction(
-        name: '_ChatStore._handleFriendRequestAccepted');
-    try {
-      return super._handleFriendRequestAccepted(data);
     } finally {
       _$_ChatStoreActionController.endAction(_$actionInfo);
     }

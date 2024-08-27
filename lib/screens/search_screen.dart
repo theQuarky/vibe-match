@@ -45,17 +45,19 @@ class _SearchScreenState extends State<SearchScreen> {
           },
       };
 
-      await matchStore.addToMatchQueue(userData);
-      matchStore.startListeningForMatches(
-        userId,
-        (String chatId, String otherUserId) {
-          stopSearch(matchStore);
-          Navigator.of(context).pushNamed('/anonymous_chat', arguments: {
-            'chatId': chatId,
-            'friendId': otherUserId,
-          });
-        },
-      );
+      bool isAddedInQueue = await matchStore.addToMatchQueue(userData);
+      if (isAddedInQueue) {
+        matchStore.startListeningForMatches(
+          userId,
+          (String chatId, String otherUserId) {
+            stopSearch(matchStore);
+            Navigator.of(context).pushNamed('/anonymous_chat', arguments: {
+              'chatId': chatId,
+              'friendId': otherUserId,
+            });
+          },
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error starting search: $e')),

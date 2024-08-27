@@ -62,9 +62,10 @@ abstract class _MatchStore with Store {
   }
 
   @action
-  Future<void> addToMatchQueue(Map<String, dynamic> userData) async {
-    await _serverlessService.addToMatchQueue(userData);
-    setInQueue(true);
+  Future<bool> addToMatchQueue(Map<String, dynamic> userData) async {
+    bool isAddedInQueue = await _serverlessService.addToMatchQueue(userData);
+    setInQueue(isAddedInQueue);
+    return isAddedInQueue;
   }
 
   @action
@@ -81,9 +82,12 @@ abstract class _MatchStore with Store {
     lastListenStartTime = DateTime.now();
 
     _matchListener = _firestoreService.getChatStream(userId).listen(
-          (snapshot) => _processSnapshot(snapshot, userId, onMatchFound),
-          onError: (error) => print("Error in match listener: $error"),
-        );
+      (snapshot) {
+        // Map<String, dynamic> data = snapshot.
+        _processSnapshot(snapshot, userId, onMatchFound);
+      },
+      onError: (error) => print("Error in match listener: $error"),
+    );
   }
 
   @action
@@ -97,7 +101,12 @@ abstract class _MatchStore with Store {
       Function(String, String) onMatchFound) {
     for (var change in snapshot.docChanges) {
       if (change.type == DocumentChangeType.added) {
-        _handleNewMatch(change.doc, userId, onMatchFound);
+        Map<String, dynamic>? data = change.doc.data() as Map<String, dynamic>;
+        print(data);
+        print(FirestoreService.createdAtThreshold);
+        if (data['createdAt'] > FirestoreService.createdAtThreshold) {
+          _handleNewMatch(change.doc, userId, onMatchFound);
+        }
       }
     }
   }
@@ -108,7 +117,8 @@ abstract class _MatchStore with Store {
     if (data != null && data['isPermanent'] != true) {
       final users = List<String>.from(data['users'] ?? []);
       if (users.contains(userId)) {
-        final otherUserId = users.firstWhere((id) => id != userId, orElse: () => '');
+        final otherUserId =
+            users.firstWhere((id) => id != userId, orElse: () => '');
         if (otherUserId.isNotEmpty) {
           onMatchFound(doc.id, otherUserId);
         }
@@ -140,7 +150,8 @@ abstract class _MatchStore with Store {
   }
 
   @action
-  Future<void> convertToPermanent(String anonymousChatId, String permanentChatId) async {
+  Future<void> convertToPermanent(
+      String anonymousChatId, String permanentChatId) async {
     _socketService.emit('convert_to_permanent', {
       'anonymousChatId': anonymousChatId,
       'permanentChatId': permanentChatId

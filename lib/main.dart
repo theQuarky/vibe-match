@@ -52,24 +52,41 @@ void main() async {
         ),
         Provider<FriendStore>(create: (_) => friendStore),
       ],
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    Map<String, Widget Function(BuildContext)> routes = {
+  MyApp({Key? key}) : super(key: key);
+  
+  final Map<String, Widget Function(BuildContext)> routes = {
       '/home': (context) => const HomeScreen(),
       '/auth': (context) => const AuthScreen(),
       '/profile': (context) => const ProfileScreen(),
       '/profile_edit': (context) => const ProfileEditScreen(),
       '/search': (context) => const SearchScreen(),
+      '/anonymous_chat': (context) {
+        final args =
+            ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        return ChatScreen(
+          chatId: args['chatId'],
+          friendId: args['friendId'],
+          isFriend: false,
+        );
+      },
+      '/chat': (context) {
+        final args =
+            ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        return ChatScreen(
+          chatId: args['chatId'],
+          friendId: args['friendId'],
+          isFriend: true,
+        );
+      },
     };
-
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Yoto Chat App',
       theme: ThemeData(
@@ -82,31 +99,7 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode.system,
       home: const AuthWrapper(),
-      routes: {
-        '/home': (context) => const HomeScreen(),
-        '/auth': (context) => const AuthScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/profile_edit': (context) => const ProfileEditScreen(),
-        '/search': (context) => const SearchScreen(),
-        '/anonymous_chat': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments
-              as Map<String, dynamic>;
-          return ChatScreen(
-            chatId: args['chatId'],
-            friendId: args['friendId'],
-            isFriend: false,
-          );
-        },
-        '/chat': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments
-              as Map<String, dynamic>;
-          return ChatScreen(
-            chatId: args['chatId'],
-            friendId: args['friendId'],
-            isFriend: true,
-          );
-        },
-      },
+      routes: routes,
     );
   }
 }

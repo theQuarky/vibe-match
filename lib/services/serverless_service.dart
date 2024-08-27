@@ -64,24 +64,29 @@ class ServerlessService {
     }
   }
 
-  Future<void> addToMatchQueue(Map<String, dynamic> userData) async {
-    String? idToken = await _getIdToken();
-    if (idToken == null) {
-      throw Exception('User not authenticated');
-    }
+  Future<bool> addToMatchQueue(Map<String, dynamic> userData) async {
+    try {
+      String? idToken = await _getIdToken();
+      if (idToken == null) {
+        throw Exception('User not authenticated');
+      }
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/addToMatchQueue'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // Allow all origins
-        'Authorization': 'Bearer $idToken',
-      },
-      body: json.encode(userData),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to add to match queue: ${response.body}');
+      final response = await http.post(
+        Uri.parse('$baseUrl/addToMatchQueue'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*', // Allow all origins
+          'Authorization': 'Bearer $idToken',
+        },
+        body: json.encode(userData),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('error $e');
+      return false;
     }
   }
 

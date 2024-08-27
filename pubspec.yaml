@@ -27,6 +27,7 @@ dependencies:
   socket_io_client: ^2.0.3+1
   get_it: ^7.7.0
   flutter_chat_types: ^3.6.2
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

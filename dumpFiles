@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Output file name
+output_file="all_content_dump.txt"
+
+# Clear the output file if it already exists
+> $output_file
+
+# Function to process files recursively
+process_files() {
+    local directory=$1
+
+    for file in "$directory"/*; do
+        if [ -d "$file" ]; then
+            # If it's a directory, recurse into it
+            process_files "$file"
+        elif [ -f "$file" ]; then
+            # If it's a file, dump its contents
+            echo "# $file" >> $output_file
+            cat "$file" >> $output_file
+            echo -e "\n" >> $output_file
+        fi
+    done
+}
+
+# Start processing from the current directory (lib in this case)
+process_files "lib"
+
+echo "All files have been concatenated into $output_file"

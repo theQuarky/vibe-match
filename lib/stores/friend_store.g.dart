@@ -88,6 +88,15 @@ mixin _$FriendStore on _FriendStore, Store {
     return _$_saveToCacheAsyncAction.run(() => super._saveToCache());
   }
 
+  late final _$getFriendProfileAsyncAction =
+      AsyncAction('_FriendStore.getFriendProfile', context: context);
+
+  @override
+  Future<Map<String, dynamic>?> getFriendProfile(String friendId) {
+    return _$getFriendProfileAsyncAction
+        .run(() => super.getFriendProfile(friendId));
+  }
+
   late final _$_FriendStoreActionController =
       ActionController(name: '_FriendStore', context: context);
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:provider/provider.dart';
+import 'package:yoto/stores/auth_store.dart';
 import 'package:yoto/widgets/chat_appbar.dart';
 import 'package:yoto/widgets/chat_input_area.dart';
 import 'package:yoto/widgets/chat_message_list.dart';
@@ -28,7 +29,6 @@ class ChatScreen extends StatefulWidget {
 class ChatScreenState extends State<ChatScreen> {
   late ChatTimerService _timerService;
   bool _isNavigating = false;
-
   @override
   void initState() {
     super.initState();
@@ -54,6 +54,14 @@ class ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _addFriend() {
+    if (!widget.isFriend) {
+      final authStore = Provider.of<AuthStore>(context, listen: false);
+      Provider.of<MatchStore>(context, listen: false)
+          .sendFriendRequest(authStore.currentUser!.uid, widget.chatId);
+    }
+  }
+
   void _navigateToHome() {
     if (!_isNavigating) {
       _isNavigating = true;
@@ -68,19 +76,20 @@ class ChatScreenState extends State<ChatScreen> {
     final matchStore = Provider.of<MatchStore>(context);
 
     return Observer(
-      builder: (_) {
+      builder: (context) {
         if (matchStore.isChatEnded && !_isNavigating) {
           _navigateToHome();
         }
-
+        bool isFriend = widget.isFriend || matchStore.areFriendsNow;
         return Scaffold(
           appBar: _TimerAppBar(
             timerValueListenable: _timerService.secondsRemaining,
             builder: (context, secondsRemaining) {
               return ChatAppBar(
                 friendId: widget.friendId,
-                isFriend: widget.isFriend,
+                isFriend: isFriend,
                 timerValue: secondsRemaining,
+                onAddFriend: _addFriend,
                 onEndChat: _endChat,
               );
             },
@@ -90,7 +99,7 @@ class ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: ChatMessageList(chatId: widget.chatId),
               ),
-              ChatInputArea(chatId: widget.chatId, isFriend: widget.isFriend),
+              ChatInputArea(chatId: widget.chatId, isFriend: isFriend),
             ],
           ),
         );

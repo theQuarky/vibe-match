@@ -24,8 +24,7 @@ abstract class _ChatStore with Store {
     _socketService
       ..on('new_message', _handleNewMessage)
       ..on('chat_history', _handleChatHistory)
-      ..on('chat_type', _handleChatType)
-      ..on('friend_request_accepted', _handleFriendRequestAccepted);
+      ..on('chat_type', _handleChatType);
   }
 
   types.TextMessage _createMessage(dynamic msgData) {
@@ -45,8 +44,7 @@ abstract class _ChatStore with Store {
     _socketService
       ..off('new_message')
       ..off('chat_history')
-      ..off('chat_type')
-      ..off('friend_request_accepted');
+      ..off('chat_type');
   }
 
   @action
@@ -73,13 +71,6 @@ abstract class _ChatStore with Store {
   @action
   void _handleChatType(dynamic data) {
     currentChatType = data['type'];
-  }
-
-  @action
-  void _handleFriendRequestAccepted(dynamic data) {
-    // Handle friend request accepted event
-    // You might want to update UI or perform some action here
-    print('Friend request accepted for chat: ${data['chatId']}');
   }
 
   @action
@@ -110,16 +101,6 @@ abstract class _ChatStore with Store {
     chatMessages
         .putIfAbsent(chatId, () => ObservableList<types.Message>())
         .insert(0, localMessage);
-  }
-
-  @action
-  Future<void> sendFriendRequest(String chatId, String userId) async {
-    _socketService.emit('add_friend', {'userId': userId, 'chatId': chatId});
-  }
-
-  @action
-  Future<void> endChat(String chatId, String userId) async {
-    _socketService.emit('end_chat', {'chatId': chatId, 'userId': userId});
   }
 
   @action
