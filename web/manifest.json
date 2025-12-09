@@ -1,11 +1,11 @@
 {
-    "name": "chat_app",
-    "short_name": "chat_app",
+    "name": "VibeMatch",
+    "short_name": "VibeMatch",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "VibeMatch - A real-time chat application with Firebase integration",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,5 +1,5 @@
-import 'package:chat_app/SearchScreen.dart';
-import 'package:chat_app/components/ChatTile.dart';
+import 'package:vibe_match/SearchScreen.dart';
+import 'package:vibe_match/components/ChatTile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

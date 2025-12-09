@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:chat_app/MainScreen.dart';
-import 'package:chat_app/TempChatScreen.dart';
+import 'package:vibe_match/MainScreen.dart';
+import 'package:vibe_match/TempChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

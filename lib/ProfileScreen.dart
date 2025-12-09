@@ -1,8 +1,8 @@
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:chat_app/AuthScreen.dart';
-import 'package:chat_app/MainScreen.dart';
+import 'package:vibe_match/AuthScreen.dart';
+import 'package:vibe_match/MainScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
