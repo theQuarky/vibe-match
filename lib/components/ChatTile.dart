@@ -1,4 +1,4 @@
-import 'package:chat_app/ChatScreen.dart';
+import 'package:vibe_match/ChatScreen.dart';
 import 'package:flutter/material.dart';
 
 class ChatTile extends StatelessWidget {

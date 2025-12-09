@@ -1,7 +1,7 @@
-import 'package:chat_app/ChatScreen.dart';
-import 'package:chat_app/ProfileScreen.dart';
-import 'package:chat_app/SearchScreen.dart';
-import 'package:chat_app/TempScreen.dart';
+import 'package:vibe_match/ChatScreen.dart';
+import 'package:vibe_match/ProfileScreen.dart';
+import 'package:vibe_match/SearchScreen.dart';
+import 'package:vibe_match/TempScreen.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';

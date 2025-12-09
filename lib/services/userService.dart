@@ -1,4 +1,4 @@
-import 'package:chat_app/ProfileScreen.dart';
+import 'package:vibe_match/ProfileScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
